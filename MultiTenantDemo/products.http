@@ -1,0 +1,96 @@
+@MultiTenantDemo_HostAddress = http://localhost:5020
+
+
+### Get all products for tenant1
+GET {{MultiTenantDemo_HostAddress}}/tenant1/api/Products
+Accept: application/json
+
+###
+
+### Get all products for tenant2
+GET {{MultiTenantDemo_HostAddress}}/tenant2/api/Products
+Accept: application/json
+
+###
+
+### Get specific product by ID for tenant1
+GET {{MultiTenantDemo_HostAddress}}/tenant1/api/Products/1
+Accept: application/json
+
+###
+
+### Get specific product by ID for tenant2
+GET {{MultiTenantDemo_HostAddress}}/tenant2/api/Products/1
+Accept: application/json
+
+###
+
+### Create a new product for tenant1
+POST {{MultiTenantDemo_HostAddress}}/tenant1/api/Products
+Content-Type: application/json
+
+{
+  "name": "Product from Tenant 1",
+  "price": 99.99
+}
+
+###
+
+### Create a new product for tenant2
+POST {{MultiTenantDemo_HostAddress}}/tenant2/api/Products
+Content-Type: application/json
+
+{
+  "name": "Product from Tenant 2",
+  "price": 149.99
+}
+
+###
+
+### Update a product for tenant1
+PUT {{MultiTenantDemo_HostAddress}}/tenant1/api/Products/1
+Content-Type: application/json
+
+{
+  "id": 1,
+  "name": "Updated Product from Tenant 1",
+  "price": 129.99
+}
+
+###
+
+### Update a product for tenant2
+PUT {{MultiTenantDemo_HostAddress}}/tenant2/api/Products/1
+Content-Type: application/json
+
+{
+  "id": 1,
+  "name": "Updated Product from Tenant 2",
+  "price": 179.99
+}
+
+###
+
+### Delete a product for tenant1
+DELETE {{MultiTenantDemo_HostAddress}}/tenant1/api/Products/1
+
+###
+
+### Delete a product for tenant2
+DELETE {{MultiTenantDemo_HostAddress}}/tenant2/api/Products/1
+
+###
+
+### Test with header strategy (X-Tenant header)
+GET {{MultiTenantDemo_HostAddress}}/api/Products
+X-Tenant: tenant1
+Accept: application/json
+
+###
+
+### Test with header strategy for tenant2
+GET {{MultiTenantDemo_HostAddress}}/api/Products
+X-Tenant: tenant2
+Accept: application/json
+
+###
