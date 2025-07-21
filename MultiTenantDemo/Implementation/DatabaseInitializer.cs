@@ -33,14 +33,14 @@ namespace MultiTenantDemo.Implementation
             _logger.LogInformation("To Sponsor this project, visit https://opencollective.com/fullstackhero");
         }
 
-        public async Task InitializeApplicationDbForTenantAsync(FSHTenantInfo tenant, CancellationToken cancellationToken)
+        public async Task InitializeApplicationDbForTenantAsync(AppTenantInfo tenant, CancellationToken cancellationToken)
         {
             // First create a new scope
             using var scope = _serviceProvider.CreateScope();
 
             // Then set current tenant so the right connectionstring is used
             _serviceProvider.GetRequiredService<IMultiTenantContextAccessor>()
-                .MultiTenantContext = new MultiTenantContext<FSHTenantInfo>()
+                .MultiTenantContext = new MultiTenantContext<AppTenantInfo>()
                 {
                     TenantInfo = tenant
                 };
@@ -65,7 +65,7 @@ namespace MultiTenantDemo.Implementation
         {
             if (await _tenantDbContext.TenantInfo.FindAsync(new object?[] { MultitenancyConstants.Root.Id }, cancellationToken: cancellationToken) is null)
             {
-                var rootTenant = new FSHTenantInfo(
+                var rootTenant = new AppTenantInfo(
                     MultitenancyConstants.Root.Id,
                     MultitenancyConstants.Root.Name,
                     string.Empty,

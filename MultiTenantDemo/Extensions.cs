@@ -18,10 +18,10 @@ namespace MultiTenantDemo
                     string connectionString = "Host=localhost;Database=multitenant_default;Username=postgres;Password=1234";
                     m.UseNpgsql(connectionString);
                 })
-                .AddMultiTenant<FSHTenantInfo>()
+                .AddMultiTenant<AppTenantInfo>()
                 .WithRouteStrategy(MultitenancyConstants.TenantIdName)
                     .WithHeaderStrategy(MultitenancyConstants.TenantIdName)
-                    .WithEFCoreStore<TenantDbContext, FSHTenantInfo>()
+                    .WithEFCoreStore<TenantDbContext, AppTenantInfo>()
                     .Services
                 .AddScoped<ITenantService, TenantService>();
         }

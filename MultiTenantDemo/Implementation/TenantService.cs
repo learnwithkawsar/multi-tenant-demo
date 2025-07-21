@@ -7,14 +7,14 @@ namespace MultiTenantDemo.Implementation
 {
     public class TenantService : ITenantService
     {
-        private readonly IMultiTenantStore<FSHTenantInfo> _tenantStore;
+        private readonly IMultiTenantStore<AppTenantInfo> _tenantStore;
         //  private readonly IConnectionStringSecurer _csSecurer;
         private readonly IDatabaseInitializer _dbInitializer;
         //  private readonly IStringLocalizer _t;
 
 
         public TenantService(
-            IMultiTenantStore<FSHTenantInfo> tenantStore,
+            IMultiTenantStore<AppTenantInfo> tenantStore,
             //  IConnectionStringSecurer csSecurer,
             IDatabaseInitializer dbInitializer
 
@@ -103,7 +103,7 @@ namespace MultiTenantDemo.Implementation
             return "Tenant {0}'s Subscription Upgraded. Now Valid till {1}.";
         }
 
-        private async Task<FSHTenantInfo> GetTenantInfoAsync(string id) =>
+        private async Task<AppTenantInfo> GetTenantInfoAsync(string id) =>
             await _tenantStore.TryGetAsync(id)
                 ?? throw new ArgumentException("{0} {1} Not Found.");
     }
