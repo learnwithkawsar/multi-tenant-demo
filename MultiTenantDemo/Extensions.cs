@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Finbuckle.MultiTenant;
+using Microsoft.EntityFrameworkCore;
 using MultiTenantDemo.Constants;
 using MultiTenantDemo.DbContexts;
 using MultiTenantDemo.Implementation;

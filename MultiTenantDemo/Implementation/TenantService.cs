@@ -1,4 +1,4 @@
-﻿using Finbuckle.MultiTenant;
+﻿using Finbuckle.MultiTenant.Abstractions;
 using Mapster;
 using MultiTenantDemo.Interfaces;
 using MultiTenantDemo.Models;

@@ -1,4 +1,4 @@
-﻿using Finbuckle.MultiTenant;
+﻿using Finbuckle.MultiTenant.Abstractions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MultiTenantDemo.DbContexts;
@@ -12,12 +12,13 @@ namespace MultiTenantDemo.Controllers
     public class ProductsController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
-        private readonly ITenantInfo? _currentTenant;
-
-        public ProductsController(ApplicationDbContext context, ITenantInfo? currentTenant)
+        private readonly ILogger<ProductsController> _logger;
+        private readonly IMultiTenantContextAccessor _tenantAccessor;
+        public ProductsController(ApplicationDbContext context, IMultiTenantContextAccessor tenantAccessor, ILogger<ProductsController> logger)
         {
             _context = context;
-            _currentTenant = currentTenant;
+            _tenantAccessor = tenantAccessor;
+            _logger = logger;
         }
 
         // GET: api/Products
@@ -25,16 +26,20 @@ namespace MultiTenantDemo.Controllers
         public async Task<ActionResult<IEnumerable<Product>>> GetProducts()
         {
 
-            var tenant = _currentTenant.Identifier;
 
-            Console.WriteLine($"Current Tenant: {tenant}");
+            // Log tenant info when querying
+            var tenant = _tenantAccessor.MultiTenantContext?.TenantInfo as AppTenantInfo;
+            _logger.LogInformation($"[ProductService] Querying products for tenant: {tenant?.Name ?? "NULL"}");
 
+            // Log the actual connection string being used
+            var connectionString = _context.Database.GetConnectionString();
+            _logger.LogInformation($"[ProductService] Using connection: {connectionString?.Substring(0, 50)}...");
 
+            var products = await _context.Products.ToListAsync();
 
-            // Log or use tenant information
-            // Console.WriteLine($"Current Tenant: {currentTenant.Identifier} - {currentTenant.Name}");
+            _logger.LogInformation($"[ProductService] Found {products.Count} products");
 
-            return await _context.Products.ToListAsync();
+            return products;
         }
 
         // GET: api/Products/5
