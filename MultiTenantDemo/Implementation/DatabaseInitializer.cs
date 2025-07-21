@@ -5,7 +5,6 @@ using MultiTenantDemo.Constants;
 using MultiTenantDemo.DbContexts;
 using MultiTenantDemo.Interfaces;
 using MultiTenantDemo.Models;
-using System.Reflection;
 
 namespace MultiTenantDemo.Implementation
 {
@@ -39,66 +38,63 @@ namespace MultiTenantDemo.Implementation
 
         public async Task InitializeApplicationDbForTenantAsync(AppTenantInfo tenant, CancellationToken cancellationToken)
         {
-            // First create a new scope
-            //using var scope = _serviceProvider.CreateScope();
-
-            //// //Then set current tenant so the right connectionstring is used
-            //var accessor = scope.ServiceProvider.GetRequiredService<IMultiTenantContextAccessor>();
-
-            //// // Manually create and assign the context if it's null
-            //if (accessor.MultiTenantContext is not MultiTenantContext<AppTenantInfo> context)
-            //{
-            //    context = new MultiTenantContext<AppTenantInfo>
-            //    {
-            //        TenantInfo = tenant
-            //    };
-            //    accessor.MultiTenantContext = context; // No cast to generic interface needed
-            //}
-            //else
-            //{
-            //    context.TenantInfo = tenant;
-            //}
-
-
-            using var scope = _serviceProvider.CreateScope();
-
-            // Get all registered implementations
-            var services = scope.ServiceProvider.GetServices<IMultiTenantContextAccessor>();
-            var accessor = services.FirstOrDefault();
-
-            // Or try to get a writable version through reflection
-            var accessorType = accessor.GetType();
-            var contextProperty = accessorType.GetProperty("MultiTenantContext",
-                BindingFlags.Public | BindingFlags.Instance);
-
-            if (contextProperty != null && contextProperty.CanWrite)
+            if (tenant?.ConnectionString == null)
             {
-                var context = new MultiTenantContext<AppTenantInfo>
-                {
-                    TenantInfo = tenant
-                };
-                contextProperty.SetValue(accessor, context);
+                _logger.LogError($"Invalid tenant or connection string for tenant: {tenant?.Id}");
+                throw new ArgumentException("Tenant must have a valid connection string");
             }
 
+            _logger.LogInformation($"Initializing database for tenant: {tenant.Name} ({tenant.Id})");
+            _logger.LogInformation($"Using connection: {tenant.ConnectionString}");
 
-            if (_dbContext.Database.GetMigrations().Any())
+            // Create DbContext options directly with tenant's connection string
+            var optionsBuilder = new DbContextOptionsBuilder<ApplicationDbContext>();
+            optionsBuilder.UseNpgsql(tenant.ConnectionString); // or UseSqlServer
+
+            // Create a mock accessor for the tenant context
+            var mockAccessor = new MockMultiTenantContextAccessor(tenant);
+
+            try
             {
-                if ((await _dbContext.Database.GetPendingMigrationsAsync(cancellationToken)).Any())
+                // Create DbContext with specific connection
+                using var dbContext = new ApplicationDbContext(mockAccessor, optionsBuilder.Options);
+
+                _logger.LogInformation($"DbContext created with connection: {dbContext.Database.GetConnectionString()}");
+
+                // Test connection first
+                if (!await dbContext.Database.CanConnectAsync(cancellationToken))
                 {
-                    _logger.LogInformation("Applying Migrations for '{tenantId}' tenant.", tenant.Id);
-                    await _dbContext.Database.MigrateAsync(cancellationToken);
+                    _logger.LogError($"Cannot connect to database for tenant {tenant.Id}");
+                    return;
                 }
 
-                if (await _dbContext.Database.CanConnectAsync(cancellationToken))
+                // Apply migrations
+                if (dbContext.Database.GetMigrations().Any())
                 {
-                    _logger.LogInformation("Connection to {tenantId}'s Database Succeeded.", tenant.Id);
-
-                    //  await _dbSeeder.SeedDatabaseAsync(_dbContext, cancellationToken);
+                    var pendingMigrations = await dbContext.Database.GetPendingMigrationsAsync(cancellationToken);
+                    if (pendingMigrations.Any())
+                    {
+                        _logger.LogInformation($"Applying {pendingMigrations.Count()} migrations for tenant '{tenant.Id}'");
+                        await dbContext.Database.MigrateAsync(cancellationToken);
+                        _logger.LogInformation($"Successfully applied migrations for tenant '{tenant.Id}'");
+                    }
+                    else
+                    {
+                        _logger.LogInformation($"No pending migrations for tenant '{tenant.Id}'");
+                    }
                 }
+
+                _logger.LogInformation($"Database initialization completed for tenant '{tenant.Id}'");
             }
-            // await scope.ServiceProvider.GetRequiredService<ApplicationDbInitializer>()
-            //     .InitializeAsync(cancellationToken);
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Failed to initialize database for tenant '{tenant.Id}': {ex.Message}");
+                throw;
+            }
         }
+
+        // Helper class for creating a mock accessor
+
 
         private async Task InitializeTenantDbAsync(CancellationToken cancellationToken)
         {
@@ -127,6 +123,19 @@ namespace MultiTenantDemo.Implementation
 
                 await _tenantDbContext.SaveChangesAsync(cancellationToken);
             }
+        }
+    }
+
+    public class MockMultiTenantContextAccessor : IMultiTenantContextAccessor
+    {
+        public IMultiTenantContext MultiTenantContext { get; } // Note: IMultiTenantContext interface
+
+        public MockMultiTenantContextAccessor(AppTenantInfo tenant)
+        {
+            MultiTenantContext = new MultiTenantContext<AppTenantInfo>
+            {
+                TenantInfo = tenant
+            };
         }
     }
 }

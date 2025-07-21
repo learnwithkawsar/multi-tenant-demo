@@ -30,7 +30,7 @@ builder.Services.AddDbContext<ApplicationDbContext>((serviceProvider, options) =
     // Log what connection string is being used
     var logger = serviceProvider.GetService<ILogger<ApplicationDbContext>>();
     logger?.LogInformation($"[DbContext Registration] Using connection for tenant: {tenant?.Name ?? "DEFAULT"}");
-    logger?.LogInformation($"[DbContext Registration] Connection string: {connectionString?.Substring(0, 50)}...");
+    //logger?.LogInformation($"[DbContext Registration] Connection string: {connectionString?.Substring(0, 50)}...");
 
     //  m.UseNpgsql("Host=localhost;Database=multitenant_default;Username=postgres;Password=1234");
 })
